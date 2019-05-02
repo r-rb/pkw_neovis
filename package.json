@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^3.9.3",
     "bootstrap": "^3.4.1",
+    "neo4j-driver": "^1.7.3",
     "neovis.js": "^1.0.0",
     "react": "^16.8.6",
     "react-bootstrap": "^1.0.0-beta.8",
     "react-dom": "^16.8.6",
     "react-resize-aware": "^3.0.0-beta.3",
-    "react-scripts": "2.1.8"
+    "react-scripts": "2.1.8",
+    "vis": "^4.21.0"
   },
   "scripts": {
     "start": "react-scripts start",

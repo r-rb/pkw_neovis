@@ -1,7 +1,5 @@
 import React, { Component } from "react";
-import useResizeAware from 'react-resize-aware';
-import PropTypes from "prop-types";
-import * as NeoVis from 'neovis.js';
+import * as NeoVis from '../graphing_shit/neovis';
 
 class GraphView extends Component{
     constructor(props){
@@ -16,10 +14,9 @@ class GraphView extends Component{
           server_user: neo4jUser,
           server_password: neo4jPassword,
           initial_cypher:
-            "MATCH (tw:LandOwner)-[rel:OWNS_SHARES]->(ht:Shareholding) RETURN tw, ht, rel LIMIT 10"
+            "MATCH (n:Character) RETURN n LIMIT 25"
         };
-
-        this.vis = new NeoVis.default(config);
+        this.vis = new NeoVis.default(config);  
         this.vis.render();
     }
     render() {
@@ -38,4 +35,4 @@ class GraphView extends Component{
     }
 }
 
-export default GraphView;
+export{GraphView};
