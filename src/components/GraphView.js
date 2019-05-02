@@ -18,14 +18,24 @@ class GraphView extends Component{
           initial_cypher:
             "MATCH (tw:LandOwner)-[rel:OWNS_SHARES]->(ht:Shareholding) RETURN tw, ht, rel LIMIT 10"
         };
-        /*
-          Since there is no neovis package on NPM at the moment, we have to use a "trick":
-          we bind Neovis to the window object in public/index.html.js
-        */
+
         this.vis = new NeoVis.default(config);
         this.vis.render();
     }
-    render(){
-
+    render() {
+      const { width, height, containerId, backgroundColor } = this.props;
+      return (
+        <div
+          id={containerId}
+          ref={this.visRef}
+          style={{
+            width: `${width}px`,
+            height: `${height}px`,
+            backgroundColor: `${backgroundColor}`
+          }}
+        />
+      );
     }
 }
+
+export default GraphView;
