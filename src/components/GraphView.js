@@ -14,7 +14,16 @@ class GraphView extends Component{
           server_user: neo4jUser,
           server_password: neo4jPassword,
           initial_cypher:
-            "MATCH (n:Character) RETURN n LIMIT 25"
+            "MATCH (n:Character) RETURN n LIMIT 10",
+          labels: {"Character": {
+                    "caption": "name"
+                  }},
+                  relationships: {
+                    "INTERACTS": {
+                        "thickness": "1",
+                        "caption": false
+                    }
+                }
         };
         this.vis = new NeoVis.default(config);  
         this.vis.render();
@@ -26,8 +35,8 @@ class GraphView extends Component{
           id={containerId}
           ref={this.visRef}
           style={{
-            width: `${width}px`,
-            height: `${height}px`,
+            width: `100%`,
+            height: `100%`,
             backgroundColor: `${backgroundColor}`
           }}
         />

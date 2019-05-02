@@ -46,6 +46,16 @@ export default class NeoVis {
         this._edges[edge.id] = edge;
     }
 
+    addClickCallBack(context){
+        context._network.on('click',function(params){
+            console.log(context);
+            if(params.nodes.length>0){
+                console.log(params.nodes)
+                context.expandNode(context,params.nodes[0])
+            }
+        })
+    }
+
     /**
      * Build node object for vis from a neo4j Node
      * FIXME: use config
@@ -195,7 +205,7 @@ export default class NeoVis {
 
         return edge;
     }
-
+    
     // public API
 
     render() {
@@ -335,15 +345,17 @@ export default class NeoVis {
                     }
                   };
 
-                var container = self._container;
-                self._data = {
-                    "nodes": new vis.DataSet(Object.values(self._nodes)),
-                    "edges": new vis.DataSet(Object.values(self._edges))
+                    var container = self._container;
+                    self._data = {
+                        "nodes": new vis.DataSet(Object.values(self._nodes)),
+                        "edges": new vis.DataSet(Object.values(self._edges))
 
-                }
+                    }
 
                 console.log(self._data.nodes);
                 console.log(self._data.edges);
+
+                
                 
                 // Create duplicate node for any self reference relationships
                 // NOTE: Is this only useful for data model type data
@@ -361,6 +373,7 @@ export default class NeoVis {
                 // );
                 
                 self._network = new vis.Network(container, self._data, options);
+                self.addClickCallBack(self);    
                 console.log("completed");
                 setTimeout(() => { self._network.stopSimulation(); }, 10000);
 
@@ -371,7 +384,183 @@ export default class NeoVis {
                   console.log(error);
                 }
 
-            })
+            });
+
+
+        };
+
+    expandNode(context,id) {
+
+        // connect to Neo4j instance
+        // run query
+
+        let self = context;
+        let recordCount = 0;
+        let session = this._driver.session();
+        console.log(id)
+        let expandQuery = `MATCH (s)-[r]->(p) WHERE ID(s) = ${id} RETURN *`
+        
+        session
+            .run(expandQuery, {limit: 30})
+            .subscribe({
+                onNext: function (record) {
+                    recordCount++;
+
+                    console.log("CLASS NAME");
+                    console.log(record.constructor.name);
+                    console.log(record);
+
+                    record.forEach(function(v, k, r) {
+                    console.log("Constructor:");
+                    console.log(v.constructor.name);
+                    if (v.constructor.name === "Node") {
+                        let node = self.buildNodeVisObject(v);
+
+                        try {
+                            self._addNode(node);
+                            self._data.nodes.add(node);
+                        }catch(e){
+                            console.log(e);
+                        }
+
+                    }
+                    else if (v.constructor.name === "Relationship") {
+
+                        let edge = self.buildEdgeVisObject(v);
+
+                        try {
+                            self._addEdge(edge);
+                            self._data.edges.add(edge);
+                        } catch(e) {
+                            console.log(e);
+                        }
+
+                    }
+                    else if (v.constructor.name === "Path") {
+                        console.log("PATH");
+                        console.log(v);
+
+                        let n1 = self.buildNodeVisObject(v.start);
+                        let n2 = self.buildNodeVisObject(v.end);
+                        
+                        self._addNode(n1);
+                        self._data.nodes.add(n1);
+                        self._addNode(n2);
+                        self._data.nodes.add(n2);
+
+                        v.segments.forEach((obj) => {
+                            
+                            self._addNode(self.buildNodeVisObject(obj.start));
+                            self._data.nodes.add(self.buildNodeVisObject(obj.start));
+                            self._addNode(self.buildNodeVisObject(obj.end));
+                            self._data.nodes.add(self.buildNodeVisObject(obj.end));
+                            self._addEdge(self.buildEdgeVisObject(obj.relationship))
+                            self._data.edges.add(self.buildEdgeVisObject(obj.relationship));
+                        });
+
+                    }
+                    else if (v.constructor.name === "Array") {
+                        v.forEach(function(obj) {
+                            console.log("Array element constructor:");
+                            console.log(obj.constructor.name);
+                            if (obj.constructor.name === "Node") {
+                                let node = self.buildNodeVisObject(obj);
+
+                                try {
+                                    self._addNode(node);
+                                } catch(e) {
+                                    console.log(e);
+                                }
+                            }
+                            else if (obj.constructor.name === "Relationship") {
+                                let edge = self.buildEdgeVisObject(obj);
+
+                                try {
+                                    self._addEdge(edge);
+                                } catch(e) {
+                                    console.log(e);
+                                }
+                            }
+                        });
+                    }
+
+                })
+                },
+                onCompleted: function () {
+                    session.close();
+                    let options = {
+                    nodes: {
+                        shape: 'dot',
+                        font: {
+                            size: 26,
+                            strokeWidth: 7
+                        },
+                        scaling: {
+                            label: {
+                                enabled: true
+                            }
+                        }
+                    },
+                    edges: {
+                        arrows: {
+                            to: {enabled: self._config.arrows || false } // FIXME: handle default value
+                        },
+                        length: 200
+                    },
+                    layout: {
+                        improvedLayout: false,
+                        hierarchical: {
+                            enabled: self._config.hierarchical || false,
+                            sortMethod: self._config.hierarchical_sort_method || "hubsize"
+
+                        }
+                    },
+                    physics: { // TODO: adaptive physics settings based on size of graph rendered
+                        // enabled: true,
+                        // timestep: 0.5,
+                        // stabilization: {
+                        //     iterations: 10
+                        // }
+                        
+                            adaptiveTimestep: true,
+                            // barnesHut: {
+                            //     gravitationalConstant: -8000,
+                            //     springConstant: 0.04,
+                            //     springLength: 95
+                            // },
+                            stabilization: {
+                                iterations: 1000,
+                                fit: true
+                            }
+                        
+                    }
+                    };
+
+                    //var container = self._container;
+                    // self._data = {
+                    //     "nodes": new vis.DataSet(Object.values(self._nodes)),
+                    //     "edges": new vis.DataSet(Object.values(self._edges))
+
+                    // }
+
+                // console.log(self._data.nodes);
+                // console.log(self._data.edges);
+                
+                //self._network.setData(self._data);
+                //self.addClickCallBack(self);    
+                console.log("completed");
+                setTimeout(() => { self._network.stopSimulation(); }, 10000);
+
+                self._events.generateEvent(CompletionEvent, {record_count: recordCount});
+
+                },
+                onError: function (error) {
+                    console.log(error);
+                }
+
+            });
+
+
         };
 
     /**
@@ -382,6 +571,8 @@ export default class NeoVis {
         this._edges = {};
         this._network.setData([]);
     }
+
+
 
 
     /**
