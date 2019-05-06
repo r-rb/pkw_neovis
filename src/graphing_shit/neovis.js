@@ -18,7 +18,7 @@ export default class NeoVis {
      *    labels:
      *
      *  }
-     *
+     
      */
 
     constructor(config) {
@@ -28,7 +28,8 @@ export default class NeoVis {
         this._config = config;
         this._encrypted = config.encrypted || defaults['neo4j']['encrypted'];
         this._trust = config.trust || defaults.neo4j.trust;
-        this._driver = neo4j.v1.driver(config.server_url || defaults.neo4j.neo4jUri, neo4j.v1.auth.basic(config.server_user || defaults.neo4j.neo4jUser, config.server_password || defaults.neo4j.neo4jPassword), {encrypted: this._encrypted, trust: this._trust});
+        this._driver = neo4j.v1.driver(config.server_url || defaults.neo4j.neo4jUri, neo4j.v1.auth.basic(config.server_user || 
+            defaults.neo4j.neo4jUser, config.server_password || defaults.neo4j.neo4jPassword), {encrypted: this._encrypted, trust: this._trust});
         this._query =   config.initial_cypher || defaults.neo4j.initialQuery;
         this._nodes = {};
         this._edges = {};
@@ -441,13 +442,11 @@ export default class NeoVis {
                         console.log(v);
 
                         let n1 = self.buildNodeVisObject(v.start);
-                        let n2 = self.buildNodeVisObject(v.end);
-                        
+                        let n2 = self.buildNodeVisObject(v.end);                      
                         self._addNode(n1);
                         self._data.nodes.add(n1);
                         self._addNode(n2);
                         self._data.nodes.add(n2);
-
                         v.segments.forEach((obj) => {
                             
                             self._addNode(self.buildNodeVisObject(obj.start));
@@ -487,80 +486,16 @@ export default class NeoVis {
                 })
                 },
                 onCompleted: function () {
-                    session.close();
-                    let options = {
-                    nodes: {
-                        shape: 'dot',
-                        font: {
-                            size: 26,
-                            strokeWidth: 7
-                        },
-                        scaling: {
-                            label: {
-                                enabled: true
-                            }
-                        }
-                    },
-                    edges: {
-                        arrows: {
-                            to: {enabled: self._config.arrows || false } // FIXME: handle default value
-                        },
-                        length: 200
-                    },
-                    layout: {
-                        improvedLayout: false,
-                        hierarchical: {
-                            enabled: self._config.hierarchical || false,
-                            sortMethod: self._config.hierarchical_sort_method || "hubsize"
-
-                        }
-                    },
-                    physics: { // TODO: adaptive physics settings based on size of graph rendered
-                        // enabled: true,
-                        // timestep: 0.5,
-                        // stabilization: {
-                        //     iterations: 10
-                        // }
-                        
-                            adaptiveTimestep: true,
-                            // barnesHut: {
-                            //     gravitationalConstant: -8000,
-                            //     springConstant: 0.04,
-                            //     springLength: 95
-                            // },
-                            stabilization: {
-                                iterations: 1000,
-                                fit: true
-                            }
-                        
-                    }
-                    };
-
-                    //var container = self._container;
-                    // self._data = {
-                    //     "nodes": new vis.DataSet(Object.values(self._nodes)),
-                    //     "edges": new vis.DataSet(Object.values(self._edges))
-
-                    // }
-
-                // console.log(self._data.nodes);
-                // console.log(self._data.edges);
-                
-                //self._network.setData(self._data);
-                //self.addClickCallBack(self);    
-                console.log("completed");
-                setTimeout(() => { self._network.stopSimulation(); }, 10000);
-
-                self._events.generateEvent(CompletionEvent, {record_count: recordCount});
-
-                },
+                                session.close();
+                                console.log("completed");
+                                setTimeout(() => { self._network.stopSimulation(); }, 10000);
+                                self._events.generateEvent(CompletionEvent, {record_count: recordCount});
+                            },
                 onError: function (error) {
-                    console.log(error);
+                            console.log(error);
                 }
 
             });
-
-
         };
 
     /**
@@ -571,9 +506,6 @@ export default class NeoVis {
         this._edges = {};
         this._network.setData([]);
     }
-
-
-
 
     /**
      *
